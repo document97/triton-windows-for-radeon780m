@@ -47,6 +47,7 @@ Needed to compile [triton](https://github.com/lshqqytiger/triton) from source on
 - First clone is ~1.5 GB due to compiled static libraries.
 - For the LLVM source headers, download [llvm-project](https://github.com/llvm/llvm-project) at commit `71a977d0` — the cmake configs reference source tree include paths.
 - Maximum memory use can reach 26GB in the building process, testing on HIP SDK 5.7.1, using patches from likelovewant's repo.
+- Errors may contained in README.md and the code. Sorry, this is just my first open-source project.
 
 ## Build details
 
@@ -57,3 +58,18 @@ Needed to compile [triton](https://github.com/lshqqytiger/triton) from source on
 | Compiler | MSVC 19.51 (VS 2026) |
 | Static libs | 499 .lib files, ~1.3 GB |
 
+## Testing Environments
+- AMD Ryzen7 8845H w/ Radeon(TM) 780M Graphics
+- 32 GB LPDDR5 6400MT/s
+- Torch 2.7.1+cu118 + ZLUDA 3.9.6 + HIP SDK 5.7
+- Newest ComfyUI version from master branch.
+
+## Thanks
+
+This project relies heavily on the foundational work and tools provided by the open-source community. Special thanks to:
+
+- **[lshqqytiger](https://github.com/lshqqytiger)**: For maintaining the [Triton Windows fork](https://github.com/lshqqytiger/triton) and adapting ZLUDA for AMD platforms on Windows.
+- **[likelovewant](https://github.com/likelovewant)**: For providing valuable patches, build configurations, and ROCm library support tailored for the AMD Radeon 780M APU (gfx1103) and other consumer AMD hardware.
+- **The LLVM & MLIR Developers**: For building and maintaining the foundational compiler infrastructure.
+- **The Triton and ZLUDA Communities**: For making high-performance CUDA-compatible kernels accessible on AMD hardware.
+- **The PyTorch and ComfyUI Communities**: For driving the development of local AI pipelines and broadening hardware compatibility.
