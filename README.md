@@ -46,6 +46,7 @@ Needed to compile [triton](https://github.com/lshqqytiger/triton) from source on
 - Install `ninja` and `cmake` via `pip install cmake ninja`.
 - First clone is ~1.5 GB due to compiled static libraries.
 - For the LLVM source headers, download [llvm-project](https://github.com/llvm/llvm-project) at commit `71a977d0` — the cmake configs reference source tree include paths.
+- Maximum memory use can reach 26GB in the building process, testing on HIP SDK 5.7.1, using patches from likelovewant's repo.
 
 ## Build details
 
