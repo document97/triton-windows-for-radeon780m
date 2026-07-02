@@ -25,7 +25,7 @@ Needed to compile [triton](https://github.com/lshqqytiger/triton) from source on
 
 3. **Set up environment**:
    ```cmd
-   call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+   call "C:\Program Files\Microsoft Visual Studio\2026\Community\VC\Auxiliary\Build\vcvars64.bat"
    set CMAKE_GENERATOR=Ninja
    set LLVM_SYSPATH=C:\path\to\triton-windows-for780m\build
    ```
