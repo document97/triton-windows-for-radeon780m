@@ -90,6 +90,7 @@ This project relies heavily on the foundational work and tools provided by the o
 
 - **[lshqqytiger](https://github.com/lshqqytiger)**: For maintaining the [Triton Windows fork](https://github.com/lshqqytiger/triton) and adapting ZLUDA for AMD platforms on Windows.
 - **[likelovewant](https://github.com/likelovewant)**: For providing valuable patches, build configurations, and ROCm library support tailored for the AMD Radeon 780M APU (gfx1103) and other consumer AMD hardware.
+- **[viralvfx/ComfyUI-INT4-Fast](https://github.com/viralvfx/ComfyUI-INT4-Fast)**: For the ComfyUI INT4 implementation that provided the W4A4/ConvRot layout, quantized checkpoint handling, and runtime integration foundation used by the companion plugin. The gfx1103-native Triton compiler and IU4 WMMA work in this repository extends that foundation.
 - **The LLVM & MLIR Developers**: For building and maintaining the foundational compiler infrastructure.
 - **The Triton and ZLUDA Communities**: For making high-performance CUDA-compatible kernels accessible on AMD hardware.
 - **The PyTorch and ComfyUI Communities**: For driving the development of local AI pipelines and broadening hardware compatibility.
