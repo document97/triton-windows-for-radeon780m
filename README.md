@@ -1,5 +1,5 @@
 
-# Pre-built LLVM with MLIR + AMDGPU for Triton on Windows
+# Pre-built LLVM + Triton native INT4 for Radeon 780M on Windows
 
 This repo contains a pre-built LLVM + MLIR (commit `71a977d0`) compiled with:
 - MLIR enabled
@@ -9,13 +9,28 @@ This repo contains a pre-built LLVM + MLIR (commit `71a977d0`) compiled with:
 
 ## Purpose
 
-Needed to compile [triton](https://github.com/lshqqytiger/triton) from source on Windows for AMD GPUs (780M) via ZLUDA.
+Needed to compile [Triton](https://github.com/lshqqytiger/triton) from source on Windows for AMD GPUs (Radeon 780M / `gfx1103`) via ZLUDA. The repository keeps the pre-built LLVM/MLIR tree in `build/` and the matching Triton source in `triton-main/`.
+
+## Native INT4 update
+
+The `triton-main` directory includes the native W4A4 compiler changes used by
+the ComfyUI INT4 ConvRot backend:
+
+- first-class `tl.int4` and `tl.uint4` frontend and IR types;
+- signed/unsigned INT4 operands for `tl.dot` with INT32 accumulation;
+- AMD `AccelerateAMDMatmul` support for `{i4, i4, i32, i32}`;
+- lowering to the native RDNA3 instruction
+  `v_wmma_i32_16x16x16_iu4` on `gfx1103`.
+
+The resulting wheel was verified with PyTorch 2.7.1+cu118, ZLUDA, HIP SDK
+5.7 and Radeon 780M. This is native IU4 WMMA arithmetic; it is not an eager
+or INT8 arithmetic fallback.
 
 ## Usage
 
 1. **Clone this repo**:
    ```
-   git clone --depth=1 https://github.com/document97/triton-windows-for780m.git
+   git clone --depth=1 https://github.com/document97/triton-windows-for-radeon780m.git
    ```
 
 2. **Run path patching** (cmake configs have hardcoded paths):
@@ -27,7 +42,7 @@ Needed to compile [triton](https://github.com/lshqqytiger/triton) from source on
    ```cmd
    call "C:\Program Files\Microsoft Visual Studio\2026\Community\VC\Auxiliary\Build\vcvars64.bat"
    set CMAKE_GENERATOR=Ninja
-   set LLVM_SYSPATH=C:\path\to\triton-windows-for780m\build
+   set LLVM_SYSPATH=C:\path\to\triton-windows-for-radeon780m\build
    ```
 
 4. **Build Triton wheel**:
@@ -37,7 +52,7 @@ Needed to compile [triton](https://github.com/lshqqytiger/triton) from source on
    ```
    Or generate a `.whl`:
    ```cmd
-   pip wheel . --no-build-isolation --verbose
+   pip wheel . --no-build-isolation --verbose --wheel-dir ..\dist
    ```
 
 ## Notes
@@ -47,6 +62,11 @@ Needed to compile [triton](https://github.com/lshqqytiger/triton) from source on
 - First clone is ~1.5 GB due to compiled static libraries.
 - For the LLVM source headers, download [llvm-project](https://github.com/llvm/llvm-project) at commit `71a977d0` — the cmake configs reference source tree include paths.
 - Maximum memory use can reach 26GB in the building process, testing on HIP SDK 5.7.1, using patches from likelovewant's repo.
+- `triton-main\build_int4_wheel.bat` already points `LLVM_SYSPATH` to the
+  repository's sibling `build` directory. Update only the Visual Studio,
+  Python and HIP paths if they differ on your machine.
+- After installation, a smoke test should report Triton `int4`/`uint4` types
+  and generated AMDGPU assembly containing `v_wmma_i32_16x16x16_iu4`.
 - Errors may contained in README.md and the code. Sorry, this is just my first open-source project.
 
 ## Build details
