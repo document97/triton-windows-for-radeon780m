@@ -28,6 +28,9 @@ or INT8 arithmetic fallback.
 
 ## Usage
 
+The compiled LLVM/MLIR tree is already included in `build/`; it does not need
+to be rebuilt. The matching Triton source is in `triton-main/`.
+
 1. **Clone this repo**:
    ```
    git clone --depth=1 https://github.com/document97/triton-windows-for-radeon780m.git
@@ -38,11 +41,17 @@ or INT8 arithmetic fallback.
    .\patch_cmake_paths.ps1
    ```
 
-3. **Set up environment**:
+3. **Set up environment** (from a VS Developer PowerShell or after loading `vcvars64.bat`):
    ```cmd
    call "C:\Program Files\Microsoft Visual Studio\2026\Community\VC\Auxiliary\Build\vcvars64.bat"
    set CMAKE_GENERATOR=Ninja
    set LLVM_SYSPATH=C:\path\to\triton-windows-for-radeon780m\build
+   ```
+
+   In PowerShell, use:
+   ```powershell
+   $env:CMAKE_GENERATOR = "Ninja"
+   $env:LLVM_SYSPATH = "C:\path\to\triton-windows-for-radeon780m\build"
    ```
 
 4. **Build Triton wheel**:
@@ -54,20 +63,23 @@ or INT8 arithmetic fallback.
    ```cmd
    pip wheel . --no-build-isolation --verbose --wheel-dir ..\dist
    ```
+   To install the wheel into ComfyUI, use its Python executable:
+   ```powershell
+   D:\ComfyUI-aki-v2\python\python.exe -m pip install --force-reinstall .\dist\triton-*.whl
+   ```
 
 ## Notes
 
-- MSVC 2022+ required (the .lib files use the MSVC ABI).
+- MSVC 2022 or newer is required (the `.lib` files use the MSVC ABI).
 - Install `ninja` and `cmake` via `pip install cmake ninja`.
 - First clone is ~1.5 GB due to compiled static libraries.
 - For the LLVM source headers, download [llvm-project](https://github.com/llvm/llvm-project) at commit `71a977d0` — the cmake configs reference source tree include paths.
 - Maximum memory use can reach 26GB in the building process, testing on HIP SDK 5.7.1, using patches from likelovewant's repo.
-- `triton-main\build_int4_wheel.bat` already points `LLVM_SYSPATH` to the
-  repository's sibling `build` directory. Update only the Visual Studio,
-  Python and HIP paths if they differ on your machine.
+- Run `triton-main\build_int4_wheel.bat` from the repository root if you prefer
+  the scripted build. It already points `LLVM_SYSPATH` at `build`; update only
+  the Visual Studio, Python and HIP paths if they differ on your machine.
 - After installation, a smoke test should report Triton `int4`/`uint4` types
   and generated AMDGPU assembly containing `v_wmma_i32_16x16x16_iu4`.
-- Errors may contained in README.md and the code. Sorry, this is just my first open-source project.
 
 ## Build details
 
@@ -82,7 +94,7 @@ or INT8 arithmetic fallback.
 - AMD Ryzen7 8845H w/ Radeon(TM) 780M Graphics
 - 32 GB LPDDR5 6400MT/s
 - Torch 2.7.1+cu118 + ZLUDA 3.9.6 + HIP SDK 5.7
-- Newest ComfyUI version from master branch.
+- ComfyUI dev branch with the matching comfy-kitchen ConvRot support.
 
 ## Thanks
 
