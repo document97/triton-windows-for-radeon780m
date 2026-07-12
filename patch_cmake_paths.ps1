@@ -1,21 +1,40 @@
+param(
+    [string]$LlvmSourcePath = (Join-Path $PSScriptRoot "llvm-project"),
+    [string]$BuildPath = (Join-Path $PSScriptRoot "build")
+)
 
-$oldPath = "C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9"
-$newPath = $PSScriptRoot -replace '\\', '/'
+$ErrorActionPreference = "Stop"
+$originalRoot = "C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9"
+$llvmSource = (Resolve-Path -LiteralPath $LlvmSourcePath).Path -replace '\\', '/'
+$build = (Resolve-Path -LiteralPath $BuildPath).Path -replace '\\', '/'
+$cmakeRoot = Join-Path $BuildPath "lib\cmake"
 
-if ($oldPath -eq $newPath) {
-    Write-Host "Paths match, no patching needed."
-    exit 0
+if (-not (Test-Path -LiteralPath (Join-Path $LlvmSourcePath "llvm\include\llvm"))) {
+    throw "LLVM source headers were not found under '$LlvmSourcePath'. Use llvm-project commit 71a977d0."
+}
+if (-not (Test-Path -LiteralPath $cmakeRoot)) {
+    throw "Pre-built LLVM CMake files were not found under '$cmakeRoot'."
 }
 
-$cmakeFiles = Get-ChildItem -Path "$PSScriptRoot\build\lib\cmake" -Recurse -Filter *.cmake
-$count = 0
-foreach ($file in $cmakeFiles) {
-    $content = Get-Content -Path $file.FullName -Raw
-    if ($content -match [regex]::Escape($oldPath)) {
-        $content = $content -replace [regex]::Escape($oldPath), $newPath
-        Set-Content -Path $file.FullName -Value $content -NoNewline
-        $count++
+$replacements = [ordered]@{
+    "$originalRoot/build" = $build
+    $originalRoot = $llvmSource
+}
+$changedFiles = 0
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+
+Get-ChildItem -LiteralPath $cmakeRoot -Recurse -Filter *.cmake | ForEach-Object {
+    $content = Get-Content -LiteralPath $_.FullName -Raw
+    $updated = $content
+    foreach ($oldPath in $replacements.Keys) {
+        $updated = $updated.Replace($oldPath, $replacements[$oldPath])
+    }
+    if ($updated -cne $content) {
+        [System.IO.File]::WriteAllText($_.FullName, $updated, $utf8NoBom)
+        $changedFiles++
     }
 }
-Write-Host "Patched $count cmake file(s). Old path -> $newPath"
 
+Write-Host "Patched $changedFiles CMake file(s)."
+Write-Host "LLVM source: $llvmSource"
+Write-Host "LLVM build:  $build"
