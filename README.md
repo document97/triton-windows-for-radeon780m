@@ -23,16 +23,12 @@ This is native IU4 WMMA arithmetic, not an eager or INT8 fallback.
   `71a977d0`, HIP SDK 5.7, ZLUDA and PyTorch 2.7.1+cu118.
 - Main use case: the companion ComfyUI W4A4 ConvRot backend.
 
-Other gfx11 GPUs or software versions may work, but have not been verified by
-this project.
-
 ## Prerequisites
 
 ### Required to build the wheel
 
 - Visual Studio 2022 or newer with **Desktop development with C++**.
-- Python matching the environment where the wheel will be installed. Python
-  3.12 is the tested version.
+- Python matching the environment where the wheel will be installed.
 - CMake and Ninja installed into that Python environment:
 
   ```powershell
@@ -41,8 +37,7 @@ this project.
 
 - HIP SDK 5.7 (the tested path is `C:\Program Files\AMD\ROCm\5.7`).
 - The LLVM source tree at commit `71a977d0` for source headers.
-- At least 32 GB system RAM is recommended. Peak memory usage during the
-  tested build was approximately 26 GB.
+- At least 16 GB system RAM is recommended.
 - The clone contains about 1.5 GB of pre-built libraries. Keep additional
   disk space for LLVM sources, temporary build files and the wheel.
 
@@ -55,21 +50,6 @@ this project.
 
 The exact PyTorch, ZLUDA and ComfyUI versions above are tested versions, not
 universal hard requirements.
-
-## Repository layout
-
-```text
-triton-windows-for-radeon780m/
-|-- build/                    pre-built LLVM/MLIR libraries and CMake files
-|-- llvm-project/             LLVM source commit 71a977d0 (download separately)
-|-- triton-main/              patched Triton source
-|-- tests/smoke_test_int4.py  native IU4 WMMA verification
-`-- patch_cmake_paths.ps1     relocates generated LLVM CMake paths
-```
-
-Do not delete `build/`: it is the pre-built LLVM/MLIR tree used to build the
-Triton wheel. The `llvm-project/` directory is not included and must be
-downloaded separately.
 
 ## Build the wheel
 
@@ -113,24 +93,6 @@ downloaded separately.
    `vswhere.exe`, uses the repository's `build/` directory, and writes the
    wheel to `triton-main\dist\`. Optional overrides are `PYTHON_EXE`,
    `HIP_PATH`, `LLVM_SYSPATH` and `MAX_JOBS`.
-
-## Install into ComfyUI
-
-Install the generated wheel with the same Python executable used by ComfyUI:
-
-```powershell
-$wheel = Get-ChildItem .\triton-main\dist\triton-*.whl |
-    Sort-Object LastWriteTime -Descending |
-    Select-Object -First 1
-& D:\ComfyUI-aki-v2\python\python.exe -m pip install --force-reinstall $wheel.FullName
-```
-
-Confirm that Python imports the intended package rather than another Triton
-installation:
-
-```powershell
-D:\ComfyUI-aki-v2\python\python.exe -c "import triton; print(triton.__version__); print(triton.__file__)"
-```
 
 ## Verify native INT4
 
@@ -191,16 +153,7 @@ assembly.
 - 32 GB LPDDR5-6400
 - Python 3.12
 - PyTorch 2.7.1+cu118 + ZLUDA 3.9.6 + HIP SDK 5.7
-- ComfyUI dev branch with matching comfy-kitchen ConvRot support
-
-## Known limitations
-
-- The pre-built LLVM libraries use the MSVC ABI and are Windows x64 specific.
-- The current binary and kernel validation target is `gfx1103`.
-- The supplied build was validated with Python 3.12; a different Python ABI
-  requires a wheel built with that Python executable.
-- The project does not install or configure ZLUDA, PyTorch, ComfyUI or the
-  companion INT4 plugin automatically.
+- ComfyUI v0.28.0
 
 ## Thanks
 
@@ -214,7 +167,7 @@ assembly.
   runtime integration foundation used by the companion plugin. The gfx1103
   Triton compiler and native IU4 WMMA changes in this repository extend that
   foundation.
-- The LLVM, MLIR, Triton, ZLUDA, PyTorch and ComfyUI communities.
+- The LLVM, MLIR, Triton, ZLUDA, PyTorch and ComfyUI officials and communities.
 
 ## License
 
