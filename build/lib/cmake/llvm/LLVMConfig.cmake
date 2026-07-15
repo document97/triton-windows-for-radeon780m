@@ -1,11 +1,15 @@
+# Relocate the prebuilt LLVM/MLIR SDK to the current build tree.
+get_filename_component(_TRITON_LLVM_SDK_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
+file(TO_CMAKE_PATH "${_TRITON_LLVM_SDK_ROOT}" _TRITON_LLVM_SDK_ROOT)
+
 # This file provides information and services to the final user.
 
 
 # LLVM_BUILD_* values available only from LLVM build tree.
-set(LLVM_BUILD_BINARY_DIR "C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9/build")
-set(LLVM_BUILD_LIBRARY_DIR "C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9/build/./lib")
-set(LLVM_BUILD_MAIN_INCLUDE_DIR "C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9/llvm/include")
-set(LLVM_BUILD_MAIN_SRC_DIR "C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9/llvm")
+set(LLVM_BUILD_BINARY_DIR "${_TRITON_LLVM_SDK_ROOT}")
+set(LLVM_BUILD_LIBRARY_DIR "${_TRITON_LLVM_SDK_ROOT}/./lib")
+set(LLVM_BUILD_MAIN_INCLUDE_DIR "${_TRITON_LLVM_SDK_ROOT}/include")
+set(LLVM_BUILD_MAIN_SRC_DIR "${_TRITON_LLVM_SDK_ROOT}/llvm")
 
 
 # For finding self-installed Find*.cmake packages.
@@ -235,8 +239,8 @@ set(LLVM_ON_UNIX 0)
 
 set(LLVM_LIBDIR_SUFFIX )
 
-set(LLVM_INCLUDE_DIRS "C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9/llvm/include;C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9/build/include")
-set(LLVM_LIBRARY_DIRS "C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9/build/./lib")
+set(LLVM_INCLUDE_DIRS "${_TRITON_LLVM_SDK_ROOT}/include;${_TRITON_LLVM_SDK_ROOT}/include")
+set(LLVM_LIBRARY_DIRS "${_TRITON_LLVM_SDK_ROOT}/./lib")
 
 set(LLVM_APPEND_VC_REV "ON")
 
@@ -246,26 +250,26 @@ set(LLVM_APPEND_VC_REV "ON")
 # them split.
 
 # These are the "main" dirs
-set(LLVM_MAIN_INCLUDE_DIR "C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9/llvm/include")
-set(LLVM_LIBRARY_DIR "C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9/build/./lib")
+set(LLVM_MAIN_INCLUDE_DIR "${_TRITON_LLVM_SDK_ROOT}/include")
+set(LLVM_LIBRARY_DIR "${_TRITON_LLVM_SDK_ROOT}/./lib")
 
 # This is a secondary one for generated files
-set(LLVM_INCLUDE_DIR "C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9/build/include")
+set(LLVM_INCLUDE_DIR "${_TRITON_LLVM_SDK_ROOT}/include")
 
 set(LLVM_DEFINITIONS "-D_GLIBCXX_ASSERTIONS -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS -D_SCL_SECURE_NO_DEPRECATE -D_SCL_SECURE_NO_WARNINGS -DUNICODE -D_UNICODE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS")
-set(LLVM_BINARY_DIR "C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9/build")
-set(LLVM_CMAKE_DIR "C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9/llvm/cmake/modules")
-set(LLVM_TOOLS_BINARY_DIR "C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9/build/./bin")
+set(LLVM_BINARY_DIR "${_TRITON_LLVM_SDK_ROOT}")
+set(LLVM_CMAKE_DIR "${_TRITON_LLVM_SDK_ROOT}/llvm/cmake/modules")
+set(LLVM_TOOLS_BINARY_DIR "${_TRITON_LLVM_SDK_ROOT}/./bin")
 set(LLVM_HAVE_OPT_VIEWER_MODULES 1)
 set(LLVM_CONFIGURATION_TYPES )
 set(LLVM_ENABLE_SHARED_LIBS OFF)
 
-set(LLVM_DEFAULT_EXTERNAL_LIT "C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9/build/./bin/llvm-lit.py")
+set(LLVM_DEFAULT_EXTERNAL_LIT "${_TRITON_LLVM_SDK_ROOT}/./bin/llvm-lit.py")
 set(LLVM_LIT_ARGS "-sv")
 
 if(NOT TARGET LLVMSupport)
-  include("C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9/build/./lib/cmake/llvm/LLVMExports.cmake")
-  include("C:/Users/Glimmer/Documents/llvm-project-71a977d0d611f3e9f6137a6b8a26b730b2886ce9/build/./lib/cmake/llvm/LLVMBuildTreeOnlyTargets.cmake")
+  include("${_TRITON_LLVM_SDK_ROOT}/./lib/cmake/llvm/LLVMExports.cmake")
+  include("${_TRITON_LLVM_SDK_ROOT}/./lib/cmake/llvm/LLVMBuildTreeOnlyTargets.cmake")
 endif()
 
 # By creating the following targets here, subprojects that depend on
