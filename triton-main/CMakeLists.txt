@@ -57,6 +57,9 @@ if(NOT MSVC)
   set(CMAKE_C_FLAGS_TRITONBUILDWITHO1 "-O1")
   set(CMAKE_CXX_FLAGS_TRITONBUILDWITHO1 "-O1")
 else()
+  # Force UTF-8 source decoding on Windows. This is required for UTF-8
+  # characters in dependency headers such as pybind11/stl_bind.h.
+  add_compile_options(/utf-8)
   set(CMAKE_C_FLAGS_TRITONRELBUILDWITHASSERTS "/Zi /RTC1 /bigobj /Zc:preprocessor /permissive-")
   set(CMAKE_CXX_FLAGS_TRITONRELBUILDWITHASSERTS "/Zi /RTC1 /bigobj /Zc:preprocessor /permissive-")
   set(CMAKE_EXE_LINKER_FLAGS_TRITONRELBUILDWITHASSERTS "/debug:fastlink /INCREMENTAL")
