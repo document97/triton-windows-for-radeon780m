@@ -46,7 +46,7 @@ if errorlevel 1 (
     echo         Set PYTHON_EXE to the target Python executable.
     exit /b 1
 )
-for /f "usebackq tokens=*" %%I in (`"%PYTHON_EXE%" -c "import sysconfig; print(sysconfig.get_path('scripts'))"`) do set "PATH=%%I;%PATH%"
+for /f "usebackq delims=" %%I in (`call "%PYTHON_EXE%" -c "import sysconfig; print(sysconfig.get_path('scripts'))"`) do set "PATH=%%I;%PATH%"
 
 where cmake.exe >nul 2>nul
 if errorlevel 1 (
