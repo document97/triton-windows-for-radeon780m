@@ -1,105 +1,129 @@
 # Native INT4 Triton for Radeon 780M on Windows
 
-This repository combines a pre-built LLVM/MLIR tree with a patched Triton
-3.3 source tree for native W4A4 kernels on the Radeon 780M (`gfx1103`) under
-Windows, HIP SDK and ZLUDA.
+This repository provides a Windows x64 build of Triton 3.3 with native INT4
+support for the Radeon 780M (`gfx1103`). It includes the Triton source tree,
+the AMD backend, a relocatable pre-built LLVM/MLIR toolchain, and a build
+script that creates a wheel for a selected Python interpreter.
 
-The patch adds first-class `tl.int4` and `tl.uint4`, permits INT4 operands in
-`tl.dot` with INT32 accumulation, and extends AMD's
-`AccelerateAMDMatmul` pass for `{i4, i4, i32, i32}`. On RDNA3, a compatible
-kernel lowers to:
+The compiler exposes `tl.int4` and `tl.uint4`, accepts INT4 operands in
+`tl.dot` with INT32 accumulation, and lowers compatible gfx11 W4A4 kernels to
+the native AMD instruction:
 
 ```text
 v_wmma_i32_16x16x16_iu4
 ```
 
-This is native IU4 WMMA arithmetic, not an eager or INT8 fallback.
+## Repository contents
 
-## Support scope
+- `triton-main/`: Triton 3.3 source with the AMD backend and native INT4
+  compiler support.
+- `build/`: pre-built LLVM/MLIR headers, CMake configuration, tools, and
+  static libraries required by the offline Triton build.
+- `triton-main/build_int4_wheel.bat`: Windows wheel build entry point.
+- `tests/smoke_test_int4.py`: compiles a W4A4 kernel and checks its generated
+  AMDGPU assembly for native IU4 WMMA.
 
-- Primary target: Radeon 780M / `gfx1103`.
-- Host: Windows x64.
-- Compiler/runtime combination tested: Triton 3.3, LLVM/MLIR commit
-  `71a977d0`, HIP SDK 5.7, ZLUDA and PyTorch 2.7.1+cu118.
-- Main use case: the companion ComfyUI W4A4 ConvRot backend.
+The bundled LLVM/MLIR tree is already configured for this repository and does
+not require a separate LLVM checkout.
+
+## Target environment
+
+| Component | Supported or tested configuration |
+|---|---|
+| Host | Windows x64 |
+| GPU | Radeon 780M (`gfx1103`) |
+| Triton | 3.3 lineage, base commit `b42b6f3` |
+| LLVM/MLIR | `71a977d0d611f3e9f6137a6b8a26b730b2886ce9` |
+| HIP SDK | 5.7 |
+| Runtime bridge | ZLUDA |
+| Tested PyTorch runtime | 2.7.1+cu118 |
+
+The wheel is specific to the Python ABI used for the build. Build it with the
+same Python installation that will load it, or with another interpreter that
+has the identical major/minor version and architecture.
 
 ## Prerequisites
 
-### Required to build the wheel
+- Visual Studio 2022 or newer with the **Desktop development with C++**
+  workload and x64 MSVC tools.
+- A 64-bit Python interpreter for the target environment.
+- HIP SDK 5.7. The default location used by the script is
+  `C:\Program Files\AMD\ROCm\5.7`.
+- Enough disk space for the repository, temporary build files, and the wheel.
+  The tracked pre-built toolchain is approximately 1.5 GB.
+- At least 16 GB of system memory is recommended.
 
-- Visual Studio 2022 or newer with **Desktop development with C++**.
-- Python matching the environment where the wheel will be installed.
-- CMake and Ninja installed into that Python environment:
+Install the Python-side build dependencies into the target interpreter:
 
-  ```powershell
-  python -m pip install cmake ninja
-  ```
-
-- HIP SDK 5.7 (the tested path is `C:\Program Files\AMD\ROCm\5.7`).
-- The LLVM source tree at commit `71a977d0` for source headers.
-- At least 16 GB system RAM is recommended.
-- The clone contains about 1.5 GB of pre-built libraries. Keep additional
-  disk space for LLVM sources, temporary build files and the wheel.
-
-### Required at runtime
-
-- A ZLUDA-enabled PyTorch environment that exposes the AMD GPU as
-  `torch.cuda` while Triton reports a HIP `gfx1103` target.
-- For ComfyUI integration, a ComfyUI/dev + comfy-kitchen version with W4A4
-  ConvRot support and a compatible INT4 backend plugin.
-
-The exact PyTorch, ZLUDA and ComfyUI versions above are tested versions, not
-universal hard requirements.
+```powershell
+$python = "C:\path\to\target\python.exe"
+& $python -m pip install --upgrade setuptools wheel cmake ninja pybind11 packaging
+```
 
 ## Build the wheel
 
-1. Clone this repository:
+Clone the complete repository and run the build script from its root:
 
-   ```powershell
-   git clone --depth=1 https://github.com/document97/triton-windows-for-radeon780m.git
-   cd triton-windows-for-radeon780m
-   ```
+```powershell
+git clone https://github.com/document97/triton-windows-for-radeon780m.git
+cd triton-windows-for-radeon780m
 
-2. Download the matching LLVM source and check out the required commit:
+$python = "C:\path\to\target\python.exe"
+$env:PYTHON_EXE = $python
+.\triton-main\build_int4_wheel.bat
+```
 
-   ```powershell
-   git clone --depth=1 --filter=blob:none --no-checkout https://github.com/llvm/llvm-project.git llvm-project
-   git -C llvm-project fetch --depth=1 origin 71a977d0d611f3e9f6137a6b8a26b730b2886ce9
-   git -C llvm-project checkout FETCH_HEAD
-   ```
+The script locates Visual Studio through `vswhere.exe`, selects MSVC and
+Ninja, uses the bundled `build/` LLVM/MLIR tree, and performs an offline
+Triton build. The wheel is written to:
 
-3. Relocate the generated LLVM/MLIR CMake files:
+```text
+triton-main\dist\triton-3.3.0+git<commit>-cp<abi>-cp<abi>-win_amd64.whl
+```
 
-   ```powershell
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\patch_cmake_paths.ps1 -LlvmSourcePath .\llvm-project
-   ```
+The `cp<abi>` tag comes from `PYTHON_EXE`. Rebuild the wheel for each Python
+major/minor ABI instead of renaming an existing wheel.
 
-   A source tree stored elsewhere is also supported:
+### Build settings
 
-   ```powershell
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\patch_cmake_paths.ps1 -LlvmSourcePath C:\src\llvm-project
-   ```
+The build script accepts these optional environment variables:
 
-4. Select the target Python and build the wheel:
+| Variable | Default | Purpose |
+|---|---|---|
+| `PYTHON_EXE` | `python` on `PATH` | Python interpreter and wheel ABI |
+| `HIP_PATH` | `C:\Program Files\AMD\ROCm\5.7` | HIP SDK root |
+| `LLVM_SYSPATH` | repository `build/` directory | Pre-built LLVM/MLIR root |
+| `MAX_JOBS` | `4` | Maximum parallel compile jobs |
 
-   ```powershell
-   $env:PYTHON_EXE = "D:\ComfyUI-aki-v2\python\python.exe"
-   $env:HIP_PATH = "C:\Program Files\AMD\ROCm\5.7"
-   $env:MAX_JOBS = "4"
-   .\triton-main\build_int4_wheel.bat
-   ```
+For example, set a non-default HIP installation before starting the build:
 
-   `build_int4_wheel.bat` automatically finds Visual Studio through
-   `vswhere.exe`, uses the repository's `build/` directory, and writes the
-   wheel to `triton-main\dist\`. Optional overrides are `PYTHON_EXE`,
-   `HIP_PATH`, `LLVM_SYSPATH` and `MAX_JOBS`.
+```powershell
+$env:HIP_PATH = "C:\path\to\AMD\ROCm"
+.\triton-main\build_int4_wheel.bat
+```
+
+## Install the wheel
+
+Install the generated wheel into the same target environment without pulling
+another Triton dependency:
+
+```powershell
+& $python -m pip install --force-reinstall --no-deps "C:\path\to\triton-wheel.whl"
+```
+
+Confirm that Python imports the intended installation:
+
+```powershell
+& $python -c "import triton; print(triton.__file__)"
+```
 
 ## Verify native INT4
 
-Run the smoke test inside the ZLUDA-enabled environment:
+Run the smoke test from a working ZLUDA environment in which the Radeon GPU is
+available through `torch.cuda` and Triton reports a HIP gfx11 target:
 
 ```powershell
-D:\ComfyUI-aki-v2\python\python.exe .\tests\smoke_test_int4.py
+& $python .\tests\smoke_test_int4.py
 ```
 
 Expected output includes:
@@ -111,63 +135,54 @@ Expected output includes:
 [OK] found v_wmma_i32_16x16x16_iu4
 ```
 
-Checking the frontend types alone is insufficient. The final line proves that
-the test kernel reached the native IU4 WMMA instruction in generated AMDGPU
-assembly.
+The final line verifies native IU4 WMMA in the generated AMDGPU assembly.
+Checking only the Python types does not prove that the kernel reached the
+native instruction.
 
 ## Troubleshooting
 
-- **`cl.exe` or Visual Studio is not found:** install the Desktop development
-  with C++ workload. The build script uses `vswhere.exe` to load `vcvars64.bat`.
-- **`cmake.exe` or `ninja.exe` is not found:** install both with the same
-  `PYTHON_EXE` used for the build.
-- **CMake files still reference `C:\Users\Glimmer`:** rerun
-  `patch_cmake_paths.ps1` with the correct `-LlvmSourcePath`.
-- **PowerShell refuses to run the patch script:** use the documented
-  `-ExecutionPolicy Bypass` command; it applies only to that process.
-- **HIP SDK is not found:** set `HIP_PATH` before running the build script.
-- **MinGW is selected instead of MSVC:** remove MinGW from the current `PATH`
-  for the build. The script explicitly sets `CC=cl.exe` and `CXX=cl.exe`.
-- **The wheel installs but the smoke test has no `tl.int4`:** inspect
-  `triton.__file__`; another Triton package is being imported.
-- **The target is CUDA instead of HIP:** the test was not started through the
-  working ZLUDA/HIP Triton environment.
-- **`v_wmma_i32_16x16x16_iu4` is missing:** the compiler patch is absent, the
-  target is not compatible gfx11, or a different Triton installation was used.
+- **Visual Studio or `cl.exe` is not found:** install the Desktop development
+  with C++ workload. The script uses `vswhere.exe` to load the x64 developer
+  environment automatically.
+- **`cmake.exe` or `ninja.exe` is not found:** install the build dependencies
+  with the same interpreter assigned to `PYTHON_EXE`.
+- **The HIP SDK is not found:** set `HIP_PATH` to the SDK root before running
+  the build script.
+- **`LLVMConfig.cmake` is not found:** use a complete clone containing the
+  tracked `build/` directory, or point `LLVM_SYSPATH` at a compatible
+  pre-built LLVM/MLIR tree.
+- **The wheel is rejected as incompatible:** its `cp<abi>` tag does not match
+  the target Python version or architecture. Rebuild it with that Python.
+- **The installed package has no `tl.int4`:** check `triton.__file__`; another
+  Triton installation is being imported first.
+- **The smoke-test target is CUDA instead of HIP:** start it through the
+  working ZLUDA environment. A regular CUDA PyTorch environment cannot perform
+  the AMD native-instruction check.
+- **The IU4 instruction is absent:** confirm that the active target is HIP
+  `gfx1103` or another compatible gfx11 target and that the wheel came from
+  this repository.
 
 ## Build details
 
 | Item | Value |
 |---|---|
-| Triton base | `b42b6f3` (Triton 3.3 lineage) |
-| LLVM commit | `71a977d0d611f3e9f6137a6b8a26b730b2886ce9` |
 | LLVM projects | `mlir;llvm` |
 | LLVM targets | `host;NVPTX;AMDGPU` |
-| Assertions | enabled |
-| Tested compiler | MSVC 19.51 (Visual Studio 2026) |
-| Pre-built static libraries | 499 `.lib` files, approximately 1.3 GB |
+| LLVM assertions | enabled |
+| Build generator | Ninja |
+| Host compiler | MSVC |
+| Bundled static libraries | 499 `.lib` files, approximately 1.3 GB |
 
-## Test environment
+## Acknowledgements
 
-- AMD Ryzen 7 8845H with Radeon 780M (`gfx1103`)
-- 32 GB LPDDR5-6400
-- Python 3.12
-- PyTorch 2.7.1+cu118 + ZLUDA 3.9.6 + HIP SDK 5.7
-- ComfyUI v0.28.0
-
-## Thanks
-
-- [lshqqytiger](https://github.com/lshqqytiger) for maintaining the
-  [Windows Triton fork](https://github.com/lshqqytiger/triton) and ZLUDA work
-  for AMD hardware on Windows.
+- [lshqqytiger](https://github.com/lshqqytiger) for the Windows Triton fork
+  and ZLUDA work for AMD hardware on Windows.
 - [likelovewant](https://github.com/likelovewant) for Radeon consumer-GPU
-  patches, build configurations and ROCm library support.
+  patches, build configurations, and ROCm library support.
 - [viralvfx/ComfyUI-INT4-Fast](https://github.com/viralvfx/ComfyUI-INT4-Fast)
-  for the W4A4/ConvRot layout, quantized checkpoint handling and ComfyUI
-  runtime integration foundation used by the companion plugin. The gfx1103
-  Triton compiler and native IU4 WMMA changes in this repository extend that
-  foundation.
-- The LLVM, MLIR, Triton, ZLUDA, PyTorch and ComfyUI officials and communities.
+  for the W4A4/ConvRot runtime integration foundation.
+- The LLVM, MLIR, Triton, ZLUDA, PyTorch, and ComfyUI projects and
+  communities.
 
 ## License
 
